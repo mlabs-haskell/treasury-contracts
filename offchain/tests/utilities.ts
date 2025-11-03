@@ -254,7 +254,7 @@ export async function setupEmulator(
         ],
       ),
     prices: { memory: 577 / 1e4, steps: 721e-7 },
-    maxExecutionUnitsPerTransaction: { memory: 14e6, steps: 1e10 },
+    maxExecutionUnitsPerTransaction: { memory: 1e7, steps: 1e10 },
     maxExecutionUnitsPerBlock: { memory: 62e6, steps: 2e10 },
   };
 

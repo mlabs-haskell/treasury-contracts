@@ -37,6 +37,7 @@
     "version": "standard-version",
     "lint": "eslint src --ignore-pattern '**/dist/**'",
     "lint:fix": "bun lint --fix",
+    "bench": "bun test ./benchmarks --timeout 20000 --test-name-pattern 'bench1' && bun test ./benchmarks --timeout 20000 --test-name-pattern 'bench2'  && bun test ./benchmarks --timeout 20000 --test-name-pattern 'bench3'",
     "prepare": "cd .. && husky ./offchain/.husky"
   },
   "lint-staged": {
@@ -46,11 +47,11 @@
   },
   "bin": "./dist/cli/cli.js",
   "peerDependencies": {
-    "typescript": "^5.8.3",
-    "@blaze-cardano/sdk": "^0.2.33",
     "@blaze-cardano/data": "^0.6.0",
     "@blaze-cardano/query": "^0.5.0",
-    "@blaze-cardano/uplc": "^0.4.1"
+    "@blaze-cardano/sdk": "^0.2.33",
+    "@blaze-cardano/uplc": "^0.4.1",
+    "typescript": "^5.8.3"
   },
   "devDependencies": {
     "@babel/cli": "^7.27.2",
@@ -66,6 +67,7 @@
     "@sundaeswap/eslint-config": "^2.0.15",
     "@types/bun": "latest",
     "@types/commander": "^2.12.5",
+    "chart.js": "^4.5.1",
     "commander": "^14.0.0",
     "eslint": "^9.27.0",
     "globals": "^16.2.0",
@@ -75,6 +77,7 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^7.5.3",
+    "canvas": "^3.0.0-rc3",
     "cbor": "^10.0.3",
     "clipboardy": "^4.0.0",
     "node-fetch": "^3.3.2"
