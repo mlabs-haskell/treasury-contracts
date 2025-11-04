@@ -78,7 +78,7 @@ describe("Benchmark: on-chain execution performance limitations of allowlist ven
     )
   });
 
-  test("bench2: withdraw 16 payouts with 4 asset classes to single address", async () => {
+  test("bench2: withdraw n payouts with 4 asset classes to single address", async () => {
     const xs = [];
     const mem = [];
     const steps = [];
@@ -90,9 +90,9 @@ describe("Benchmark: on-chain execution performance limitations of allowlist ven
       "e".repeat(56),
       ];
 
-    for (let i = 10; i < 200; i += 10) {
+    for (let i = 1; i < 200; i += 1) {
       try {
-        const exUnits = await runWithNAddresses({ assets, outputAddresses: 1, allowListAddresses: i, payouts: 16 })
+        const exUnits = await runWithNAddresses({ assets, outputAddresses: 1, allowListAddresses: 1, payouts: i })
 
         xs.push(i);
         mem.push(exUnits.mem);
@@ -109,7 +109,7 @@ describe("Benchmark: on-chain execution performance limitations of allowlist ven
     }
 
     await printExUnitChart("./benchmarks/results/bench2.png",
-      { xs, xLabel: "Allow-list address count", mem, steps }
+      { xs, xLabel: "Payouts", mem, steps }
     )
   });
 
