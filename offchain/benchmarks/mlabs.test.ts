@@ -35,6 +35,7 @@ type AllowListBenchOpts = {
   assets: string[]
   outputAddresses: number
   allowListAddresses: number
+  payouts: number
 }
 
 
@@ -48,7 +49,7 @@ type ExUnitData = {
 
 // FIXME: For some reason, if the benchmarks are run after each other, the second one would fail with
 // a WASM error: RuntimeError: Unreachable code should not be executed (evaluating 'wasm.eval_phase_two_raw(..)') 
-describe("Benchmark: execution unit changes with allowlist length", () => {
+describe("Benchmark: on-chain execution performance limitations of allowlist vendor contract", () => {
   test("bench1: withdraw a payout to single address", async () => {
     const xs = [];
     const mem = [];
@@ -56,7 +57,7 @@ describe("Benchmark: execution unit changes with allowlist length", () => {
 
     for (let i = 10; i < 300; i += 10) {
       try {
-        const exUnits = await runWithNAddresses({ assets: [], outputAddresses: 1, allowListAddresses: i },)
+        const exUnits = await runWithNAddresses({ assets: [], outputAddresses: 1, allowListAddresses: i, payouts: 1 })
 
         xs.push(i);
         mem.push(exUnits.mem);
@@ -72,41 +73,12 @@ describe("Benchmark: execution unit changes with allowlist length", () => {
       }
     }
 
-    await printExUnitChart("./benchmarks/results/allow-list-single-addr.png",
+    await printExUnitChart("./benchmarks/results/bench1.png",
       { xs, xLabel: "Allow-list address count", mem, steps }
     )
   });
 
-
-  test("bench2: withdraw a payout to multiple addresses", async () => {
-    const xs = [];
-    const mem = [];
-    const steps = [];
-
-    for (let i = 10; i < 300; i += 2) {
-      try {
-        const exUnits = await runWithNAddresses({ assets: [], outputAddresses: i, allowListAddresses: i },)
-
-        xs.push(i);
-        mem.push(exUnits.mem);
-        steps.push(exUnits.steps);
-      } catch (err) {
-        if (typeof err === "string") {
-          if (err.includes("execution went over budget")) {
-            break;
-          }
-        }
-
-        throw err;
-      }
-    }
-
-    await printExUnitChart("./benchmarks/results/allow-list-multi-addr.png",
-      { xs, xLabel: "Allow-list address count", mem, steps }
-    )
-  });
-
-  test("bench3: withdraw a multiasset payout to multiple addresses", async () => {
+  test("bench2: withdraw 16 payouts with 4 asset classes to single address", async () => {
     const xs = [];
     const mem = [];
     const steps = [];
@@ -115,11 +87,75 @@ describe("Benchmark: execution unit changes with allowlist length", () => {
       ["b".repeat(56),
       "c".repeat(56),
       "d".repeat(56),
+      "e".repeat(56),
+      ];
+
+    for (let i = 10; i < 200; i += 10) {
+      try {
+        const exUnits = await runWithNAddresses({ assets, outputAddresses: 1, allowListAddresses: i, payouts: 16 })
+
+        xs.push(i);
+        mem.push(exUnits.mem);
+        steps.push(exUnits.steps);
+      } catch (err) {
+        if (typeof err === "string") {
+          if (err.includes("execution went over budget")) {
+            break;
+          }
+        }
+
+        throw err;
+      }
+    }
+
+    await printExUnitChart("./benchmarks/results/bench2.png",
+      { xs, xLabel: "Allow-list address count", mem, steps }
+    )
+  });
+
+  test("bench3: withdraw a payout to multiple addresses", async () => {
+    const xs = [];
+    const mem = [];
+    const steps = [];
+
+    for (let i = 10; i < 300; i += 2) {
+      try {
+        const exUnits = await runWithNAddresses({ assets: [], outputAddresses: i, allowListAddresses: i, payouts: 1 })
+
+        xs.push(i);
+        mem.push(exUnits.mem);
+        steps.push(exUnits.steps);
+      } catch (err) {
+        if (typeof err === "string") {
+          if (err.includes("execution went over budget")) {
+            break;
+          }
+        }
+
+        throw err;
+      }
+    }
+
+    await printExUnitChart("./benchmarks/results/bench3.png",
+      { xs, xLabel: "Allow-list address count", mem, steps }
+    )
+  });
+
+  test("bench4: withdraw a payout consisting of 4 asset classes + ada to multiple addresses", async () => {
+    const xs = [];
+    const mem = [];
+    const steps = [];
+
+    const assets =
+      ["b".repeat(56),
+      "c".repeat(56),
+      "d".repeat(56),
+      "e".repeat(56),
       ];
 
     for (let i = 10; i < 300; i += 2) {
       try {
-        const exUnits = await runWithNAddresses({ assets, outputAddresses: i, allowListAddresses: i })
+        const exUnits = await runWithNAddresses({ assets, outputAddresses: i, allowListAddresses: i, payouts: 1 })
 
         xs.push(i);
         mem.push(exUnits.mem);
@@ -136,7 +172,43 @@ describe("Benchmark: execution unit changes with allowlist length", () => {
       }
     }
 
-    await printExUnitChart("./benchmarks/results/allow-list-multiasset.png",
+    await printExUnitChart("./benchmarks/results/bench4.png",
+      { xs, xLabel: "Allow-list address count", mem, steps }
+    )
+  });
+
+  test("bench5: withdraw 16 payouts consisting of 4 asset classes + ada to multiple addresses", async () => {
+    const xs = [];
+    const mem = [];
+    const steps = [];
+
+    const assets =
+      ["b".repeat(56),
+      "c".repeat(56),
+      "d".repeat(56),
+      "e".repeat(56),
+      ];
+
+    for (let i = 1; i < 300; i += 1) {
+      try {
+        const exUnits = await runWithNAddresses({ assets, outputAddresses: i, allowListAddresses: i, payouts: 16 })
+
+        xs.push(i);
+        mem.push(exUnits.mem);
+        steps.push(exUnits.steps);
+        i += 1;
+      } catch (err) {
+        if (typeof err === "string") {
+          if (err.includes("execution went over budget")) {
+            break;
+          }
+        }
+
+        throw err;
+      }
+    }
+
+    await printExUnitChart("./benchmarks/results/bench5.png",
       { xs, xLabel: "Allow-list address count", mem, steps }
     )
   });
@@ -145,6 +217,8 @@ describe("Benchmark: execution unit changes with allowlist length", () => {
 // Run a bencmark on the vendor contract using the allow-list with increasing number of addresses.
 async function runWithNAddresses(options: AllowListBenchOpts): Promise<ExecutionUnits> {
   const amount = 340_000_000_000_000n;
+  const payoutAmount = BigInt(options.payouts * options.outputAddresses * 500_000_000);
+
   const emulator = await setupEmulator();
   const treasuryConfig = await sampleTreasuryConfig(emulator);
   const vendorConfig = await sampleVendorConfig(emulator);
@@ -173,13 +247,13 @@ async function runWithNAddresses(options: AllowListBenchOpts): Promise<Execution
     new Core.TransactionInput(Core.TransactionId("1".repeat(64)), 5n),
     new Core.TransactionOutput(
       treasuryScriptManifest.scriptAddress,
-      makeValue(500_000_000_000n),
+      makeValue(payoutAmount),
     ),
   );
   treasuryInput.output().setDatum(Core.Datum.newInlineData(Data.Void()));
   emulator.addUtxo(treasuryInput);
 
-  emulator.stepForwardToSlot(2000n);
+  emulator.stepForwardToSlot(3000n);
 
   const allowedAddresses = await Promise.all(
     Array.from({ length: options.allowListAddresses }, (_, i) => emulator.register(`Allowed ${i}`))
@@ -209,26 +283,32 @@ async function runWithNAddresses(options: AllowListBenchOpts): Promise<Execution
     },
   };
 
+
   const scriptInput = new Core.TransactionUnspentOutput(
     new Core.TransactionInput(Core.TransactionId("1".repeat(64)), 1n),
     new Core.TransactionOutput(
       vendorScriptAddress,
-      makeValue(500_000_000_000n,
-        ...options.assets.map<[string, bigint]>(asset => [asset, 500_000_000_000n]),
+      makeValue(payoutAmount,
+        ...options.assets.map<[string, bigint]>(asset => [asset, payoutAmount]),
       )
     ),
   );
+
+  // We want to distribute the full payout amount into multiple payouts
+  const amountPerPayout = BigInt(options.outputAddresses * 500_000_000);
+
   const vendorDatum: VendorDatum = {
     vendor: vendor,
-    payouts: [
-      {
-        maturation: 1000n,
-        value: coreValueToContractsValue(makeValue(500_000_000_000n,
-          ...options.assets.map<[string, bigint]>(asset => [asset, 500_000_000_000n]),
-        )),
-        status: "Active",
-      },
-    ],
+    payouts:
+      Array.from({ length: options.payouts }, (_, i) => (
+        {
+          maturation: BigInt(i * 100),
+          value: coreValueToContractsValue(makeValue(amountPerPayout,
+            ...options.assets.map<[string, bigint]>(asset => [asset, amountPerPayout]),
+          )),
+          status: "Active",
+        }
+      )),
   };
   scriptInput
     .output()
@@ -237,31 +317,23 @@ async function runWithNAddresses(options: AllowListBenchOpts): Promise<Execution
     );
   emulator.addUtxo(scriptInput);
 
-  const remainder = BigInt(500_000_000_000 - ((options.outputAddresses - 1) * 10_000_000));
-
+  // We want to distribute the full payout amount into multiple outputs
+  const amountPerOutput = BigInt(options.payouts * 500_000_000);
   const txBuilder = await emulator.as(Vendor, async (blaze, _) => {
     return await withdraw({
       configsOrScripts,
       blaze,
-      now: new Date(Number(emulator.slotToUnix(Slot(2)))),
+      now: new Date(Number(emulator.slotToUnix(Slot(2000)))),
       inputs: [scriptInput],
-      destinations: [
-        ...Array.from({ length: options.outputAddresses - 1 }, (_, i) => (
+      destinations:
+        Array.from({ length: options.outputAddresses }, (_, i) => (
           {
-            address: allowedAddresses[i],
-            amount: makeValue(10_000_000n,
-              ...options.assets.map<[string, bigint]>(asset => [asset, 10_000_000n]),
+            address: allowedAddresses[(options.allowListAddresses - i - 1)],
+            amount: makeValue(amountPerOutput,
+              ...options.assets.map<[string, bigint]>(asset => [asset, amountPerOutput]),
 
             ),
           })),
-        {
-          address: allowedAddresses[(options.allowListAddresses - 1)],
-          amount:
-            makeValue(remainder,
-              ...options.assets.map<[string, bigint]>(asset => [asset, remainder]),
-            )
-        },
-      ],
       signers: [vendorSigner],
       additionalScripts: [
         { script: allowlist.script.Script, redeemer: Data.Void() },

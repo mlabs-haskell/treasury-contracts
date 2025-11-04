@@ -37,7 +37,7 @@
     "version": "standard-version",
     "lint": "eslint src --ignore-pattern '**/dist/**'",
     "lint:fix": "bun lint --fix",
-    "bench": "bun test ./benchmarks --timeout 20000 --test-name-pattern 'bench1' && bun test ./benchmarks --timeout 20000 --test-name-pattern 'bench2'  && bun test ./benchmarks --timeout 20000 --test-name-pattern 'bench3'",
+    "bench": "bun test ./benchmarks --timeout 20000 --test-name-pattern",
     "prepare": "cd .. && husky ./offchain/.husky"
   },
   "lint-staged": {

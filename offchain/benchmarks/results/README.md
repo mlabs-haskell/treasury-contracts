@@ -17,7 +17,7 @@ through the allow-list multiple times.
 
 ### Multi-asset payout to multiple addresses
 
-Other factors can contribute to the increase in execution units. In this test 3 asset classes are
+Other factors can contribute to the increase in execution units. In this test 4 asset classes are
 distributed between multiple addresses.
 
 ![bechmark 3](./allow-list-multiasset.png)
