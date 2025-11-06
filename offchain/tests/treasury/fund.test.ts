@@ -57,6 +57,7 @@ describe("When funding", () => {
   let vendorScript: VendorVendorSpend;
   let treasuryScriptAddress: Address;
   let vendorScriptAddress: Address;
+
   beforeEach(async () => {
     emulator = await setupEmulator();
     const treasuryConfig = await sampleTreasuryConfig(emulator);
