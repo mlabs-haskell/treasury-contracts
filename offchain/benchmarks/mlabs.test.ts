@@ -51,38 +51,10 @@ type ExUnitData = {
 // a WASM error: RuntimeError: Unreachable code should not be executed (evaluating 'wasm.eval_phase_two_raw(..)') 
 describe("Benchmark: on-chain execution performance limitations of allowlist vendor contract", () => {
   test("bench1: withdraw a payout to single address", async () => {
-    const xs = [];
-    const mem = [];
-    const steps = [];
-
-    for (let i = 10; i < 300; i += 10) {
-      try {
-        const exUnits = await runWithNAddresses({ assets: [], outputAddresses: 1, allowListAddresses: i, payouts: 1 })
-
-        xs.push(i);
-        mem.push(exUnits.mem);
-        steps.push(exUnits.steps);
-      } catch (err) {
-        if (typeof err === "string") {
-          if (err.includes("execution went over budget")) {
-            break;
-          }
-        }
-
-        throw err;
-      }
-    }
-
-    await printExUnitChart("./benchmarks/results/bench1.png",
-      { xs, xLabel: "Allow-list address count", mem, steps }
-    )
+    runBench("bench1", "Allow-list address count", x => ({ assets: [], outputAddresses: 1, allowListAddresses: x, payouts: 1 }), 10, 10);
   });
 
   test("bench2: withdraw n payouts with 4 asset classes to single address", async () => {
-    const xs = [];
-    const mem = [];
-    const steps = [];
-
     const assets =
       ["b".repeat(56),
       "c".repeat(56),
@@ -90,62 +62,14 @@ describe("Benchmark: on-chain execution performance limitations of allowlist ven
       "e".repeat(56),
       ];
 
-    for (let i = 1; i < 200; i += 1) {
-      try {
-        const exUnits = await runWithNAddresses({ assets, outputAddresses: 1, allowListAddresses: 1, payouts: i })
-
-        xs.push(i);
-        mem.push(exUnits.mem);
-        steps.push(exUnits.steps);
-      } catch (err) {
-        if (typeof err === "string") {
-          if (err.includes("execution went over budget")) {
-            break;
-          }
-        }
-
-        throw err;
-      }
-    }
-
-    await printExUnitChart("./benchmarks/results/bench2.png",
-      { xs, xLabel: "Payouts", mem, steps }
-    )
+    runBench("bench2", "Payouts", x => ({ assets, outputAddresses: 1, allowListAddresses: 1, payouts: x }));
   });
 
   test("bench3: withdraw a payout to multiple addresses", async () => {
-    const xs = [];
-    const mem = [];
-    const steps = [];
-
-    for (let i = 10; i < 300; i += 2) {
-      try {
-        const exUnits = await runWithNAddresses({ assets: [], outputAddresses: i, allowListAddresses: i, payouts: 1 })
-
-        xs.push(i);
-        mem.push(exUnits.mem);
-        steps.push(exUnits.steps);
-      } catch (err) {
-        if (typeof err === "string") {
-          if (err.includes("execution went over budget")) {
-            break;
-          }
-        }
-
-        throw err;
-      }
-    }
-
-    await printExUnitChart("./benchmarks/results/bench3.png",
-      { xs, xLabel: "Allow-list address count", mem, steps }
-    )
+    runBench("bench3", "Allow-list address count", x => ({ assets: [], outputAddresses: x, allowListAddresses: x, payouts: 1 }), 10, 2);
   });
 
   test("bench4: withdraw a payout consisting of 4 asset classes + ada to multiple addresses", async () => {
-    const xs = [];
-    const mem = [];
-    const steps = [];
-
     const assets =
       ["b".repeat(56),
       "c".repeat(56),
@@ -153,35 +77,13 @@ describe("Benchmark: on-chain execution performance limitations of allowlist ven
       "e".repeat(56),
       ];
 
-    for (let i = 10; i < 300; i += 2) {
-      try {
-        const exUnits = await runWithNAddresses({ assets, outputAddresses: i, allowListAddresses: i, payouts: 1 })
-
-        xs.push(i);
-        mem.push(exUnits.mem);
-        steps.push(exUnits.steps);
-        i += 1;
-      } catch (err) {
-        if (typeof err === "string") {
-          if (err.includes("execution went over budget")) {
-            break;
-          }
-        }
-
-        throw err;
-      }
-    }
-
-    await printExUnitChart("./benchmarks/results/bench4.png",
-      { xs, xLabel: "Allow-list address count", mem, steps }
-    )
+    runBench("bench4", "Allow-list address count",
+      x => ({
+        assets, outputAddresses: x, allowListAddresses: x, payouts: 1
+      }), 10, 2);
   });
 
   test("bench5: withdraw 16 payouts consisting of 4 asset classes + ada to multiple addresses", async () => {
-    const xs = [];
-    const mem = [];
-    const steps = [];
-
     const assets =
       ["b".repeat(56),
       "c".repeat(56),
@@ -189,30 +91,49 @@ describe("Benchmark: on-chain execution performance limitations of allowlist ven
       "e".repeat(56),
       ];
 
-    for (let i = 1; i < 300; i += 1) {
-      try {
-        const exUnits = await runWithNAddresses({ assets, outputAddresses: i, allowListAddresses: i, payouts: 16 })
-
-        xs.push(i);
-        mem.push(exUnits.mem);
-        steps.push(exUnits.steps);
-        i += 1;
-      } catch (err) {
-        if (typeof err === "string") {
-          if (err.includes("execution went over budget")) {
-            break;
-          }
-        }
-
-        throw err;
-      }
-    }
-
-    await printExUnitChart("./benchmarks/results/bench5.png",
-      { xs, xLabel: "Allow-list address count", mem, steps }
-    )
+    runBench("bench5", "Allow-list address count",
+      x => (
+        { assets, outputAddresses: x, allowListAddresses: x, payouts: 16 }
+      ));
   });
 });
+
+// Run a benchmark with different parameters
+async function runBench(
+  filename: string,
+  xLabel: string,
+  options: (x: number) => AllowListBenchOpts,
+  xStart: number = 1,
+  xStep: number = 1,
+  xEnd: number = 300
+
+): Promise<void> {
+  const xs = [];
+  const mem = [];
+  const steps = [];
+
+  for (let i = xStart; i < xEnd; i += xStep) {
+    try {
+      const exUnits = await runWithNAddresses(options(i))
+
+      xs.push(i);
+      mem.push(exUnits.mem);
+      steps.push(exUnits.steps);
+    } catch (err) {
+      if (typeof err === "string") {
+        if (err.includes("execution went over budget")) {
+          break;
+        }
+      }
+
+      throw err;
+    }
+  }
+
+  await printExUnitChart(`./benchmarks/results/${filename}.png`,
+    { xs, xLabel, mem, steps }
+  )
+}
 
 // Run a bencmark on the vendor contract using the allow-list with increasing number of addresses.
 async function runWithNAddresses(options: AllowListBenchOpts): Promise<ExecutionUnits> {
