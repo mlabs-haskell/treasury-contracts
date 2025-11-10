@@ -32,7 +32,7 @@ type ExecutionUnits = {
 }
 
 type AllowListBenchOpts = {
-  assets: string[]
+  assets: number,
   outputAddresses: number
   allowListAddresses: number
   payouts: number
@@ -51,49 +51,50 @@ type ExUnitData = {
 // a WASM error: RuntimeError: Unreachable code should not be executed (evaluating 'wasm.eval_phase_two_raw(..)') 
 describe("Benchmark: on-chain execution performance limitations of allowlist vendor contract", () => {
   test("bench1: withdraw a payout to single address", async () => {
-    runBench("bench1", "Allow-list address count", x => ({ assets: [], outputAddresses: 1, allowListAddresses: x, payouts: 1 }), 10, 10);
+    runBench("bench1", "Allow-list address count", x => ({
+      assets: 0,
+      outputAddresses: 1,
+      allowListAddresses: x,
+      payouts: 1
+    }), 10, 10);
   });
 
   test("bench2: withdraw n payouts with 4 asset classes to single address", async () => {
-    const assets =
-      ["b".repeat(56),
-      "c".repeat(56),
-      "d".repeat(56),
-      "e".repeat(56),
-      ];
-
-    runBench("bench2", "Payouts", x => ({ assets, outputAddresses: 1, allowListAddresses: 1, payouts: x }));
+    runBench("bench2", "Payouts", x => ({
+      assets: 4,
+      outputAddresses: 1,
+      allowListAddresses: 1,
+      payouts: x
+    }));
   });
 
   test("bench3: withdraw a payout to multiple addresses", async () => {
-    runBench("bench3", "Allow-list address count", x => ({ assets: [], outputAddresses: x, allowListAddresses: x, payouts: 1 }), 10, 2);
+    runBench("bench3", "Allow-list address count", x => ({
+      assets: 0,
+      outputAddresses: x,
+      allowListAddresses: x,
+      payouts: 1
+    }), 10, 2);
   });
 
   test("bench4: withdraw a payout consisting of 4 asset classes + ada to multiple addresses", async () => {
-    const assets =
-      ["b".repeat(56),
-      "c".repeat(56),
-      "d".repeat(56),
-      "e".repeat(56),
-      ];
-
     runBench("bench4", "Allow-list address count",
       x => ({
-        assets, outputAddresses: x, allowListAddresses: x, payouts: 1
+        assets: 4,
+        outputAddresses: x,
+        allowListAddresses: x,
+        payouts: 1
       }), 10, 2);
   });
 
   test("bench5: withdraw 16 payouts consisting of 4 asset classes + ada to multiple addresses", async () => {
-    const assets =
-      ["b".repeat(56),
-      "c".repeat(56),
-      "d".repeat(56),
-      "e".repeat(56),
-      ];
-
     runBench("bench5", "Allow-list address count",
-      x => (
-        { assets, outputAddresses: x, allowListAddresses: x, payouts: 16 }
+      x => ({
+        assets: 4,
+        outputAddresses: x,
+        allowListAddresses: x,
+        payouts: 16
+      }
       ));
   });
 });
@@ -161,6 +162,8 @@ async function runWithNAddresses(options: AllowListBenchOpts): Promise<Execution
 
   emulator.accounts.set(rewardAccount, amount);
 
+  const assets =
+    Array.from({ length: options.assets }, (_, i) => i.toString().repeat(56));
 
   const vendorSigner = Ed25519KeyHashHex(await vendor_key(emulator));
 
@@ -210,7 +213,7 @@ async function runWithNAddresses(options: AllowListBenchOpts): Promise<Execution
     new Core.TransactionOutput(
       vendorScriptAddress,
       makeValue(payoutAmount,
-        ...options.assets.map<[string, bigint]>(asset => [asset, payoutAmount]),
+        ...assets.map<[string, bigint]>(asset => [asset, payoutAmount]),
       )
     ),
   );
@@ -225,7 +228,7 @@ async function runWithNAddresses(options: AllowListBenchOpts): Promise<Execution
         {
           maturation: BigInt(i * 100),
           value: coreValueToContractsValue(makeValue(amountPerPayout,
-            ...options.assets.map<[string, bigint]>(asset => [asset, amountPerPayout]),
+            ...assets.map<[string, bigint]>(asset => [asset, amountPerPayout]),
           )),
           status: "Active",
         }
@@ -251,7 +254,7 @@ async function runWithNAddresses(options: AllowListBenchOpts): Promise<Execution
           {
             address: allowedAddresses[(options.allowListAddresses - i - 1)],
             amount: makeValue(amountPerOutput,
-              ...options.assets.map<[string, bigint]>(asset => [asset, amountPerOutput]),
+              ...assets.map<[string, bigint]>(asset => [asset, amountPerOutput]),
 
             ),
           })),
